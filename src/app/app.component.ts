@@ -20,7 +20,7 @@ export class AppComponent implements OnInit {
 
   ngOnInit(): void {
     this.participants$ = this.squidService.getParticipants().pipe(tap(participants => {
-      this.participantsLength = participants.length
+      this.participantsLength = participants.length;
       console.log('Number of participants: ' + this.participantsLength);
       this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength)
     }));
