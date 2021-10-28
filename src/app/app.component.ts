@@ -7,4 +7,162 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
   title = 'squid-lottery';
+  sqiuds = [
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+    {
+      number: '1',
+      name: 'Roee Rokah'
+    },
+  ]
 }

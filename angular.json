@@ -123,6 +123,10 @@
           }
         }
       }
-    }},
-  "defaultProject": "squid-lottery"
+    }
+  },
+  "defaultProject": "squid-lottery",
+  "cli": {
+    "analytics": "4b346bf3-c5c4-4aed-9f2c-53a714a86d74"
+  }
 }
