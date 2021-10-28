@@ -15,6 +15,6 @@ import { SquidFlatComponent } from './squid-flat/squid-flat.component';
     AppRoutingModule
   ],
   providers: [],
-  bootstrap: [SquidFlatComponent]
+  bootstrap: [AppComponent]
 })
 export class AppModule { }
