@@ -1,5 +1,7 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, HostListener, OnInit} from '@angular/core';
 import {defaultSqiuds} from "./sqiuds-mock";
+import {SquidService} from "./squid.service";
+import {SquidSize} from "./models/squid-size.model";
 
 @Component({
   selector: 'app-root',
@@ -8,18 +10,17 @@ import {defaultSqiuds} from "./sqiuds-mock";
 })
 export class AppComponent implements OnInit {
   title = 'squid-lottery';
-  sqiuds = defaultSqiuds
-  private innerWidth: number;
-  private innerHeight: number;
-  squidWidth: string;
+  squids = defaultSqiuds
+  squidSize: SquidSize;
+
+  constructor(private squidService: SquidService) {}
 
   ngOnInit(): void {
-    this.innerWidth = window.innerWidth;
-    this.innerHeight = window.innerHeight;
-    const squareMeter = this.innerHeight * this.innerWidth;
+    this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.squids.length)
+  }
 
-    const squareMeterPerSquid = squareMeter / this.sqiuds.length;
-
-    this.squidWidth = `${Math.floor(Math.sqrt(squareMeterPerSquid))}px`;
+  @HostListener('window:resize', ['$event'])
+  onResize(event): void {
+    this.squidSize = this.squidService.calcSquidSize(event.target.innerWidth, event.target.innerHeight, this.squids.length)
   }
 }

@@ -1,19 +1,8 @@
 <div class="squid-board">
-<!--  <div class="grid-wrapper layout-1">-->
-<!--    <div *ngFor="let squid of sqiuds; let i = index" class="grid-item diamond-small"-->
-<!--         class="diamond-s{{i + 1}}"-->
-<!--    >-->
-<!--      <div class="diamond__content">-->
-<!--        <p>{{squid.name}}</p>-->
-<!--      </div>-->
-<!--    </div>-->
-<!--  </div>-->
-
-  <div class="flip-card" *ngFor="let squid of sqiuds; let i = index"
-       [ngStyle]="{'width': squidWidth, 'height': squidWidth}">
+  <div class="flip-card" *ngFor="let squid of squids; let i = index"
+       [ngStyle]="{'width': squidSize.width, 'height': squidSize.height}">
     <div class="flip-card-inner">
       <div class="flip-card-front">
-<!--        <img src="https://www.w3schools.com/howto/img_avatar.png" alt="Avatar">-->
       </div>
       <div class="flip-card-back">
         <h1>{{squid.name}}</h1>
