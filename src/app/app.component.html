@@ -9,10 +9,11 @@
 <!--    </div>-->
 <!--  </div>-->
 
-  <div class="flip-card" *ngFor="let squid of sqiuds; let i = index">
+  <div class="flip-card" *ngFor="let squid of sqiuds; let i = index"
+       [ngStyle]="{'width': squidWidth, 'height': squidWidth}">
     <div class="flip-card-inner">
       <div class="flip-card-front">
-        <img src="https://www.w3schools.com/howto/img_avatar.png" alt="Avatar" style="width:300px;height:300px;">
+<!--        <img src="https://www.w3schools.com/howto/img_avatar.png" alt="Avatar">-->
       </div>
       <div class="flip-card-back">
         <h1>{{squid.name}}</h1>
