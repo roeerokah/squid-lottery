@@ -69,15 +69,18 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   setCardsPosition(top, left): void{
+    console.log('asdasd');
     const cards = this.squidBoardElement?.nativeElement?.querySelectorAll('.flip-card');
     cards.forEach((el: HTMLElement , index) => {
+      el.style.marginTop = '0';
+      el.style.marginLeft = '0';
       el.style.top = `${top}px`;
       el.style.left = `${left}px`;
     });
   }
 
   separateOneByOne(): void{
-    this.setCardsPosition(0, 0);
+    //this.setCardsPosition(0, 0);
     setTimeout(() => {
       const cardContainerWidth = this.squidBoardElement?.nativeElement.clientWidth;
       const cardSpacing = 0;
@@ -112,5 +115,9 @@ export class AppComponent implements OnInit, AfterViewInit {
     setTimeout(() => {
       this.separateOneByOne();
     }, 0);
+
+    setTimeout(() => {
+      this.setCardsPosition(0, 0);
+    }, 5000);
   }
 }

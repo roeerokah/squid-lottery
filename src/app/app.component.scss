@@ -15,6 +15,8 @@
 
   .flip-card {
     position: absolute;
+    top: 0;
+    left: 0;
     perspective: 1000px;
     background-color: #ffffff;
     border: 5px solid #00d7ff;
