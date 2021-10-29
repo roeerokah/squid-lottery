@@ -18,14 +18,10 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   @ViewChild('squidBoard') squidBoardElement: ElementRef;
 
-  constructor(private squidService: SquidService) {}
+  constructor(private squidService: SquidService) {
+  }
 
   ngOnInit(): void {
-    this.participants$ = this.squidService.getParticipants().pipe(tap(participants => {
-      this.participantsLength = participants.length;
-      console.log('Number of participants: ' + this.participantsLength);
-      this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength);
-    }));
   }
 
   @HostListener('window:resize', ['$event'])
@@ -37,16 +33,15 @@ export class AppComponent implements OnInit, AfterViewInit {
     let left = 0;
     const step = margin;
     const cards = this.squidBoardElement?.nativeElement?.querySelectorAll('.flip-card');
-    cards.forEach((el: HTMLElement , index) => {
-        el.style.zIndex = `${index}` ;
-        el.style.marginLeft = `${left}px`;
-        el.style.marginTop = `${left}px`;
-        left = left + step;
+    cards.forEach((el: HTMLElement, index) => {
+      el.style.zIndex = `${index}`;
+      el.style.marginLeft = `${left}px`;
+      el.style.marginTop = `${left}px`;
+      left = left + step;
     });
   }
 
-  separateInstantly(): void{
-    this.setCardsPosition(0, 0);
+  separateInstantly(): void {
     setTimeout(() => {
       const cardContainerWidth = this.squidBoardElement?.nativeElement.clientWidth;
       const cardSpacing = 0;
@@ -54,9 +49,9 @@ export class AppComponent implements OnInit, AfterViewInit {
       let top = 0;
       const cardWidth = this.squidBoardElement?.nativeElement?.querySelector('.flip-card').clientWidth;
       const cardHeight = this.squidBoardElement?.nativeElement?.querySelector('.flip-card').clientHeight;
-      const leftStep =  cardWidth + cardSpacing;
+      const leftStep = cardWidth + cardSpacing;
       const cards = this.squidBoardElement?.nativeElement?.querySelectorAll('.flip-card');
-      cards.forEach((el: HTMLElement , index) => {
+      cards.forEach((el: HTMLElement, index) => {
         el.style.marginLeft = `${left}px`;
         el.style.marginTop = `${top}px`;
         left = left + leftStep;
@@ -65,13 +60,13 @@ export class AppComponent implements OnInit, AfterViewInit {
           top += cardHeight + cardSpacing;
         }
       });
-    }, 2000);
+    }, 1000);
   }
 
-  setCardsPosition(top, left): void{
+  setCardsPosition(top, left): void {
     console.log('asdasd');
     const cards = this.squidBoardElement?.nativeElement?.querySelectorAll('.flip-card');
-    cards.forEach((el: HTMLElement , index) => {
+    cards.forEach((el: HTMLElement, index) => {
       el.style.marginTop = '0';
       el.style.marginLeft = '0';
       el.style.top = `${top}px`;
@@ -79,8 +74,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     });
   }
 
-  separateOneByOne(): void{
-    //this.setCardsPosition(0, 0);
+  separateOneByOne(): void {
     setTimeout(() => {
       const cardContainerWidth = this.squidBoardElement?.nativeElement.clientWidth;
       const cardSpacing = 0;
@@ -92,7 +86,7 @@ export class AppComponent implements OnInit, AfterViewInit {
       // initial left margin for card placement
       const leftStep = cardWidth + cardSpacing;
       // time lag between each card placement
-      const secStep = 20;
+      const secStep = 5;
       let time = 0;
       const cards = this.squidBoardElement?.nativeElement?.querySelectorAll('.flip-card');
       cards.forEach((el: HTMLElement, index) => {
@@ -110,14 +104,55 @@ export class AppComponent implements OnInit, AfterViewInit {
     }, 1000);
   }
 
+  delay(ms: number): Promise<unknown> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  async removeItems(): Promise<void> {
+    const maxItemsToRemove = Math.ceil(this.participantsLength / 3);
+    const removedItems: number[] = [];
+    let index = 1;
+    if (this.participantsLength > 1) {
+      while (index <= maxItemsToRemove) {
+        const randomItemNumber = this.getRandomNumber(1, this.participantsLength);
+        if (removedItems.indexOf(randomItemNumber) === -1) {
+          const selector = `#card_${randomItemNumber}`;
+          const itemToRemove: HTMLElement = this.squidBoardElement?.nativeElement?.querySelector(selector);
+          itemToRemove.style.visibility = 'hidden';
+          itemToRemove.style.opacity = '0';
+          removedItems.push(randomItemNumber);
+          await this.delay(100);
+          index++;
+        }
+      }
+      this.setCardsPosition(0, 0);
+      await this.delay(500);
+      this.startLottery();
+    }
+  }
+
+  getRandomNumber(min, max): number {
+    return Math.floor(Math.random() * (max - min) + min);
+  }
+
   ngAfterViewInit(): void {
     // this.stackCards(0.2);
-    setTimeout(() => {
-      this.separateOneByOne();
-    }, 0);
+   this.startLottery();
+  }
 
-    setTimeout(() => {
-      this.setCardsPosition(0, 0);
-    }, 5000);
+  startLottery(): void {
+    const participantsNumber = this.participantsLength ? Math.ceil(this.participantsLength / 3) : 200;
+    this.participants$ = this.squidService.getParticipants(participantsNumber).pipe(tap(participants => {
+      this.participantsLength = participants.length;
+      console.log('Number of participants: ' + this.participantsLength);
+      this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength);
+
+      setTimeout(() => {
+        this.separateOneByOne();
+      }, 0);
+      setTimeout(() => {
+        this.removeItems();
+      }, 5000);
+    }));
   }
 }

@@ -39,6 +39,11 @@
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+
+    &.removed {
+      visibility:hidden;
+      opacity:0;
+    }
   }
 
   .flip-card-inner {
