@@ -1,4 +1,4 @@
-<div class="squid-board">
+<div class="squid-board" #squidBoard>
   <div class="flip-card" *ngFor="let squid of participants$ | async; let i = index"
        [ngStyle]="{'width': squidSize.width, 'height': squidSize.height}">
     <div class="flip-card-inner">

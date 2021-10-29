@@ -13,7 +13,7 @@ export class SquidService {
   constructor(private httpClient: HttpClient) { }
 
   getParticipants(): Observable<Participant[]> {
-    const participantsNumber = 300;
+    const participantsNumber = 71;
     const participantsList: Participant[] = [];
     for (let i = 1 ; i <= participantsNumber; i++) {
       participantsList.push({
