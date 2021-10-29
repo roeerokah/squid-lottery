@@ -76,10 +76,41 @@ export class AppComponent implements OnInit, AfterViewInit {
     });
   }
 
-  ngAfterViewInit(): void {
-    //this.stackCards(0.2);
+  separateOneByOne(): void{
+    this.setCardsPosition(0, 0);
     setTimeout(() => {
-      this.separateInstantly();
+      const cardContainerWidth = this.squidBoardElement?.nativeElement.clientWidth;
+      const cardSpacing = 0;
+      let left = 0;
+      const cardWidth = this.squidBoardElement?.nativeElement?.querySelector('.flip-card').clientWidth;
+      const cardHeight = this.squidBoardElement?.nativeElement?.querySelector('.flip-card').clientHeight;
+      // initial top margin for card placement
+      let top = 0;
+      // initial left margin for card placement
+      const leftStep = cardWidth + cardSpacing;
+      // time lag between each card placement
+      const secStep = 20;
+      let time = 0;
+      const cards = this.squidBoardElement?.nativeElement?.querySelectorAll('.flip-card');
+      cards.forEach((el: HTMLElement, index) => {
+        setTimeout(() => {
+          el.style.marginTop = `${top}px`;
+          el.style.marginLeft = `${left}px`;
+          left = left + leftStep;
+          if (left + cardWidth + cardSpacing > cardContainerWidth) {
+            left = 0;
+            top += cardHeight + cardSpacing;
+          }
+        }, time);
+        time += secStep;
+      });
+    }, 1000);
+  }
+
+  ngAfterViewInit(): void {
+    // this.stackCards(0.2);
+    setTimeout(() => {
+      this.separateOneByOne();
     }, 0);
   }
 }
