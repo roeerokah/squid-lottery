@@ -22,8 +22,17 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
+    this.squidService.refreshParticipants()
+    this.participants$ = this.squidService.participants$.pipe(tap(participants => {
+      this.participantsLength = participants.length;
+      console.log('Number of participants: ' + this.participantsLength);
+      this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength);
+    }));
   }
 
+  userByName(index, item) {
+    return item.name;
+  }
   @HostListener('window:resize', ['$event'])
   onResize(event): void {
     this.squidSize = this.squidService.calcSquidSize(event.target.innerWidth, event.target.innerHeight, this.participantsLength);
@@ -75,7 +84,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   separateOneByOne(): void {
-    setTimeout(() => {
+     setTimeout(() => {
       const cardContainerWidth = this.squidBoardElement?.nativeElement.clientWidth;
       const cardSpacing = 0;
       let left = 0;
@@ -109,13 +118,15 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   async removeItems(): Promise<void> {
+    let remainingParticipants = this.squidService.getParticipants();
     const maxItemsToRemove = Math.ceil(this.participantsLength / 3);
     const removedItems: number[] = [];
     let index = 1;
     if (this.participantsLength > 1) {
       while (index <= maxItemsToRemove) {
-        const randomItemNumber = this.getRandomNumber(1, this.participantsLength);
+        const randomItemNumber = this.getRandomNumber(0, this.participantsLength - 1);
         if (removedItems.indexOf(randomItemNumber) === -1) {
+          console.log('remove item number: ' + remainingParticipants[randomItemNumber].name);
           const selector = `#card_${randomItemNumber}`;
           const itemToRemove: HTMLElement = this.squidBoardElement?.nativeElement?.querySelector(selector);
           itemToRemove.style.visibility = 'hidden';
@@ -125,6 +136,19 @@ export class AppComponent implements OnInit, AfterViewInit {
           index++;
         }
       }
+
+      setTimeout(() => {
+        for (let index of removedItems) {
+          remainingParticipants.splice(index, 1);
+          const selector = `#card_${index}`;
+          const itemToRemove: HTMLElement = this.squidBoardElement?.nativeElement?.querySelector(selector);
+          itemToRemove.style.visibility = 'visible';
+          itemToRemove.style.opacity = '1';
+        }
+
+      this.squidService.setParticipants(remainingParticipants)
+
+      }, 0)
       this.setCardsPosition(0, 0);
       await this.delay(500);
       this.startLottery();
@@ -132,8 +156,10 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   getRandomNumber(min, max): number {
-    return Math.floor(Math.random() * (max - min) + min);
-  }
+      min = Math.ceil(min);
+      max = Math.floor(max);
+      return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive
+    }
 
   ngAfterViewInit(): void {
     // this.stackCards(0.2);
@@ -141,18 +167,17 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   startLottery(): void {
-    const participantsNumber = this.participantsLength ? Math.ceil(this.participantsLength / 3) : 200;
-    this.participants$ = this.squidService.getParticipants(participantsNumber).pipe(tap(participants => {
-      this.participantsLength = participants.length;
-      console.log('Number of participants: ' + this.participantsLength);
-      this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength);
 
-      setTimeout(() => {
-        this.separateOneByOne();
-      }, 0);
-      setTimeout(() => {
-        this.removeItems();
-      }, 5000);
-    }));
+    this.separateOneByOne();
+    setTimeout(() => {
+      this.flipThemAll();
+    }, 0);
+    setTimeout(() => {
+      this.removeItems();
+    }, 5000);
+  }
+
+  private flipThemAll() {
+
   }
 }
