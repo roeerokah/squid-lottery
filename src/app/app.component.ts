@@ -1,9 +1,9 @@
-import {AfterViewInit, Component, ElementRef, HostListener, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, OnInit, ViewChild} from '@angular/core';
 import {SquidService} from './squid.service';
 import {SquidSize} from './models/squid-size.model';
 import {Participant} from './models/participant.model';
-import {Observable} from 'rxjs';
-import {tap} from 'rxjs/operators';
+import {from, Observable, of} from 'rxjs';
+import {concatMap, delay, map, mergeAll, mergeMap, mergeMapTo, tap, toArray} from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -17,8 +17,9 @@ export class AppComponent implements OnInit, AfterViewInit {
   private participantsLength: number;
 
   @ViewChild('squidBoard') squidBoardElement: ElementRef;
+  private cardsAreOpen = false;
 
-  constructor(private squidService: SquidService) {
+  constructor(private squidService: SquidService, private cd: ChangeDetectorRef) {
   }
 
   ngOnInit(): void {
@@ -33,6 +34,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   userByName(index, item) {
     return item.name;
   }
+
   @HostListener('window:resize', ['$event'])
   onResize(event): void {
     this.squidSize = this.squidService.calcSquidSize(event.target.innerWidth, event.target.innerHeight, this.participantsLength);
@@ -73,7 +75,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   setCardsPosition(top, left): void {
-    console.log('asdasd');
+    console.log('setCardsPosition');
     const cards = this.squidBoardElement?.nativeElement?.querySelectorAll('.flip-card');
     cards.forEach((el: HTMLElement, index) => {
       el.style.marginTop = '0';
@@ -83,23 +85,22 @@ export class AppComponent implements OnInit, AfterViewInit {
     });
   }
 
-  separateOneByOne(): void {
-     setTimeout(() => {
-      const cardContainerWidth = this.squidBoardElement?.nativeElement.clientWidth;
-      const cardSpacing = 0;
-      let left = 0;
-      const cardWidth = this.squidBoardElement?.nativeElement?.querySelector('.flip-card').clientWidth;
-      const cardHeight = this.squidBoardElement?.nativeElement?.querySelector('.flip-card').clientHeight;
-      // initial top margin for card placement
-      let top = 0;
-      // initial left margin for card placement
-      const leftStep = cardWidth + cardSpacing;
-      // time lag between each card placement
-      const secStep = 5;
-      let time = 0;
-      const cards = this.squidBoardElement?.nativeElement?.querySelectorAll('.flip-card');
-      cards.forEach((el: HTMLElement, index) => {
-        setTimeout(() => {
+  separateOneByOne(): Observable<void> {
+    const cardContainerWidth = this.squidBoardElement?.nativeElement.clientWidth;
+    const cardSpacing = 0;
+    let left = 0;
+    const cardWidth = this.squidBoardElement?.nativeElement?.querySelector('.flip-card').clientWidth;
+    const cardHeight = this.squidBoardElement?.nativeElement?.querySelector('.flip-card').clientHeight;
+    // initial top margin for card placement
+    let top = 0;
+    // initial left margin for card placement
+    const leftStep = cardWidth + cardSpacing;
+    // time lag between each card placement
+    const secStep = 200;
+    const cards: HTMLElement[] = this.squidBoardElement?.nativeElement?.querySelectorAll('.flip-card');
+    return from(cards).pipe(
+      concatMap(card => of(card).pipe(
+        map((el: HTMLElement) => {
           el.style.marginTop = `${top}px`;
           el.style.marginLeft = `${left}px`;
           left = left + leftStep;
@@ -107,19 +108,23 @@ export class AppComponent implements OnInit, AfterViewInit {
             left = 0;
             top += cardHeight + cardSpacing;
           }
-        }, time);
-        time += secStep;
-      });
-    }, 1000);
+        }),
+        delay(secStep)
+      )),
+      toArray(),
+      delay(1000 + secStep),
+      tap(() => console.log('separateOneByOne')),
+      mergeMapTo(of(null))
+    );
   }
 
   delay(ms: number): Promise<unknown> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  async removeItems(): Promise<void> {
+  async removeItems(): Promise<Participant[]> {
     let remainingParticipants = this.squidService.getParticipants();
-    const maxItemsToRemove = Math.ceil(this.participantsLength / 3);
+    const maxItemsToRemove = Math.ceil(this.participantsLength / 2);
     const removedItems: number[] = [];
     let index = 1;
     if (this.participantsLength > 1) {
@@ -145,13 +150,9 @@ export class AppComponent implements OnInit, AfterViewInit {
           itemToRemove.style.visibility = 'visible';
           itemToRemove.style.opacity = '1';
         }
-
-      this.squidService.setParticipants(remainingParticipants)
-
       }, 0)
-      this.setCardsPosition(0, 0);
-      await this.delay(500);
-      this.startLottery();
+      await this.delay(1000);
+      return remainingParticipants;
     }
   }
 
@@ -167,17 +168,63 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   startLottery(): void {
-
-    this.separateOneByOne();
-    setTimeout(() => {
-      this.flipThemAll();
-    }, 0);
-    setTimeout(() => {
-      this.removeItems();
-    }, 5000);
+    this.separateOneByOne().subscribe(() => {
+      this.flipThemAll().pipe(delay(1000)).subscribe((() => {
+        this.removeItems().then((remainingParticipants) => {
+          this.continueLottery(remainingParticipants);
+        })
+      }));
+    });
   }
 
-  private flipThemAll() {
+  continueLottery(remainingParticipants: Participant[]): void {
+    console.log('continue lottery');
+    this.cd.detectChanges();
 
+    this.flipThemAll().subscribe((flipThemAll => {
+      this.setCardsPosition(0, 0);
+      this.squidService.setParticipants(remainingParticipants);
+      if (remainingParticipants.length === 1) {
+        this.declareWinner(remainingParticipants[0]);
+        return;
+      }
+      this.separateOneByOne().pipe(delay(2000)).subscribe(() => {
+        this.flipThemAll().subscribe(() => {
+          this.removeItems().then((innerRemainingParticipants) => {
+            this.continueLottery(innerRemainingParticipants);
+          });
+        })
+      })
+    }));
+  }
+
+  private declareWinner(winner: Participant) {
+    this.flipThemAll().subscribe()
+    console.info('winner', winner);
+  }
+
+  private flipThemAll(): Observable<void> {
+    return from(this.squidService.getParticipants()).pipe(
+      concatMap((participant, index) => of({participant, index}).pipe(
+        delay(200),
+        map(({participant, index}) => {
+          // console.log('flip item number: ' + participant.name);
+          const selector = `#card_${index}`;
+          // console.log('flip item selector: ' + selector);
+          const itemToRemove: HTMLElement = this.squidBoardElement?.nativeElement?.querySelector(selector);
+          if (this.cardsAreOpen) {
+            itemToRemove.classList.remove('open');
+          } else {
+            itemToRemove.classList.add('open');
+          }
+        })
+      )),
+      toArray(),
+      tap(() => {
+        this.cardsAreOpen = !this.cardsAreOpen;
+        console.log('flipped');
+      }),
+      mergeMapTo(of(null))
+    )
   }
 }
