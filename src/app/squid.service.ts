@@ -10,7 +10,7 @@ import {BehaviorSubject, Observable, of} from 'rxjs';
 export class SquidService {
   private readonly URL = 'http://localhost:80/';
   _participants$ = new BehaviorSubject([])
-  participants$ = this._participants$.asObservable();
+  participants$: Observable<Participant[]> = this._participants$.asObservable();
   private participantsList: Participant[] = [];
 
   constructor(private httpClient: HttpClient) {
