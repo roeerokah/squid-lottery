@@ -2,8 +2,18 @@ import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, O
 import {SquidService} from './squid.service';
 import {SquidSize} from './models/squid-size.model';
 import {Participant} from './models/participant.model';
-import {from, Observable, of} from 'rxjs';
-import {concatMap, delay, map, mergeAll, mergeMap, mergeMapTo, tap, toArray} from 'rxjs/operators';
+import {EMPTY, from, Observable, of} from 'rxjs';
+import {concatMap, delay, map, mergeMapTo, tap, toArray} from 'rxjs/operators';
+
+const delayBeforeRevealingAll = 1000;
+const timeBetweenRemoveOfEachItem = 100;
+const timeBetweenSeparationOfEach = 200;
+const timeBetweenFlipEachItem = 200;
+const delayAfterRemovingItems = 1000;
+const delayBeforeSeparating = 2000;
+const delayAfterSeparating = 1000;
+const delayAfterFlipThemAll = 1000;
+const delayAfterSettingPosition = 1000;
 
 @Component({
   selector: 'app-root',
@@ -18,6 +28,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   @ViewChild('squidBoard') squidBoardElement: ElementRef;
   private cardsAreOpen = false;
+  private recentlyRemovedItems: number[] = [];
 
   constructor(private squidService: SquidService, private cd: ChangeDetectorRef) {
   }
@@ -28,6 +39,17 @@ export class AppComponent implements OnInit, AfterViewInit {
       this.participantsLength = participants.length;
       console.log('Number of participants: ' + this.participantsLength);
       this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength);
+      setTimeout(() => {
+        for (let index of this.recentlyRemovedItems) {
+          // remainingParticipants.splice(index, 1);
+          const selector = `#card_${index}`;
+          console.log(selector);
+          const itemToRemove: HTMLElement = this.squidBoardElement?.nativeElement?.querySelector(selector);
+          if (!itemToRemove) continue;
+          itemToRemove.style.visibility = 'visible';
+          itemToRemove.style.opacity = '1';
+        }
+      }, 0)
     }));
   }
 
@@ -75,6 +97,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   setCardsPosition(top, left): void {
+
     console.log('setCardsPosition');
     const cards = this.squidBoardElement?.nativeElement?.querySelectorAll('.flip-card');
     cards.forEach((el: HTMLElement, index) => {
@@ -95,8 +118,6 @@ export class AppComponent implements OnInit, AfterViewInit {
     let top = 0;
     // initial left margin for card placement
     const leftStep = cardWidth + cardSpacing;
-    // time lag between each card placement
-    const secStep = 200;
     const cards: HTMLElement[] = this.squidBoardElement?.nativeElement?.querySelectorAll('.flip-card');
     return from(cards).pipe(
       concatMap(card => of(card).pipe(
@@ -109,10 +130,10 @@ export class AppComponent implements OnInit, AfterViewInit {
             top += cardHeight + cardSpacing;
           }
         }),
-        delay(secStep)
+        delay(timeBetweenSeparationOfEach)
       )),
       toArray(),
-      delay(1000 + secStep),
+      delay(delayAfterSeparating),
       tap(() => console.log('separateOneByOne')),
       mergeMapTo(of(null))
     );
@@ -137,21 +158,18 @@ export class AppComponent implements OnInit, AfterViewInit {
           itemToRemove.style.visibility = 'hidden';
           itemToRemove.style.opacity = '0';
           removedItems.push(randomItemNumber);
-          await this.delay(100);
+          await this.delay(timeBetweenRemoveOfEachItem);
           index++;
         }
       }
+      this.recentlyRemovedItems = removedItems;
 
-      setTimeout(() => {
-        for (let index of removedItems) {
-          remainingParticipants.splice(index, 1);
-          const selector = `#card_${index}`;
-          const itemToRemove: HTMLElement = this.squidBoardElement?.nativeElement?.querySelector(selector);
-          itemToRemove.style.visibility = 'visible';
-          itemToRemove.style.opacity = '1';
-        }
-      }, 0)
-      await this.delay(1000);
+      for (let index of this.recentlyRemovedItems) {
+        remainingParticipants.splice(index, 1);
+      }
+      // Setting timeout in order to execute this code after
+
+      await this.delay(delayAfterRemovingItems);
       return remainingParticipants;
     }
   }
@@ -169,7 +187,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   startLottery(): void {
     this.separateOneByOne().subscribe(() => {
-      this.flipThemAll().pipe(delay(1000)).subscribe((() => {
+      this.flipThemAll().pipe(delay(delayBeforeRevealingAll)).subscribe((() => {
         this.removeItems().then((remainingParticipants) => {
           this.continueLottery(remainingParticipants);
         })
@@ -177,18 +195,27 @@ export class AppComponent implements OnInit, AfterViewInit {
     });
   }
 
-  continueLottery(remainingParticipants: Participant[]): void {
+  async continueLottery(remainingParticipants: Participant[]): Promise<void> {
     console.log('continue lottery');
     this.cd.detectChanges();
 
-    this.flipThemAll().subscribe((flipThemAll => {
-      this.setCardsPosition(0, 0);
-      this.squidService.setParticipants(remainingParticipants);
-      if (remainingParticipants.length === 1) {
-        this.declareWinner(remainingParticipants[0]);
-        return;
-      }
-      this.separateOneByOne().pipe(delay(2000)).subscribe(() => {
+    this.flipThemAll().pipe(
+      tap(() => {
+        this.setCardsPosition(0, 0);
+      }),
+      delay(delayAfterSettingPosition),
+      tap(() => {
+        this.squidService.setParticipants(remainingParticipants);
+      }),
+      map(() => {
+        if (remainingParticipants.length === 1) {
+          this.declareWinner(remainingParticipants[0]);
+          return EMPTY;
+        }
+      }),
+      delay(delayBeforeSeparating)
+    ).subscribe((flipThemAll => {
+      this.separateOneByOne().subscribe(() => {
         this.flipThemAll().subscribe(() => {
           this.removeItems().then((innerRemainingParticipants) => {
             this.continueLottery(innerRemainingParticipants);
@@ -206,7 +233,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   private flipThemAll(): Observable<void> {
     return from(this.squidService.getParticipants()).pipe(
       concatMap((participant, index) => of({participant, index}).pipe(
-        delay(200),
+        delay(timeBetweenFlipEachItem),
         map(({participant, index}) => {
           // console.log('flip item number: ' + participant.name);
           const selector = `#card_${index}`;
@@ -224,6 +251,7 @@ export class AppComponent implements OnInit, AfterViewInit {
         this.cardsAreOpen = !this.cardsAreOpen;
         console.log('flipped');
       }),
+      delay(delayAfterFlipThemAll),
       mergeMapTo(of(null))
     )
   }
