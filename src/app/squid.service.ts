@@ -14,7 +14,7 @@ export class SquidService {
   private participantsList: Participant[] = [];
 
   constructor(private httpClient: HttpClient) {
-    const participantsNum: number = 10;
+    const participantsNum: number = 400;
     for (let i = 1 ; i <= participantsNum; i++) {
       this.participantsList.push({
         name: `Test ${i}`,

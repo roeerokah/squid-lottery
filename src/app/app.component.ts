@@ -2,13 +2,13 @@ import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, O
 import {SquidService} from './squid.service';
 import {SquidSize} from './models/squid-size.model';
 import {Participant} from './models/participant.model';
-import {EMPTY, from, NEVER, Observable, of} from 'rxjs';
-import {concatMap, delay, map, mergeMapTo, tap, toArray, withLatestFrom} from 'rxjs/operators';
+import {EMPTY, from, Observable, of} from 'rxjs';
+import {concatMap, delay, filter, map, mergeMapTo, take, tap, toArray} from 'rxjs/operators';
 
 const delayBeforeRevealingAll = 1000;
-const timeBetweenRemoveOfEachItem = 100;
-const timeBetweenSeparationOfEach = 200;
-const timeBetweenFlipEachItem = 200;
+const timeBetweenRemoveOfEachItem = 10;
+const timeBetweenSeparationOfEach = 20;
+const timeBetweenFlipEachItem = 0;
 const delayAfterRemovingItems = 1000;
 const delayBeforeSeparating = 2000;
 const delayAfterSeparating = 1000;
@@ -28,7 +28,6 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   @ViewChild('squidBoard') squidBoardElement: ElementRef;
   private cardsAreOpen = false;
-  private recentlyRemovedItems: number[] = [];
 
   constructor(private squidService: SquidService, private cd: ChangeDetectorRef) {
   }
@@ -38,19 +37,12 @@ export class AppComponent implements OnInit, AfterViewInit {
     this.participants$ = this.squidService.participants$.pipe(tap(participants => {
       this.participantsLength = participants.length;
       console.log('Number of participants: ' + this.participantsLength);
-      this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength);
-      setTimeout(() => {
-        for (let index in participants) {
-          // remainingParticipants.splice(index, 1);
-          const selector = `#card_${index}`;
-          console.log(selector);
-          const itemToRemove: HTMLElement = this.squidBoardElement?.nativeElement?.querySelector(selector);
-          if (!itemToRemove) continue;
-          itemToRemove.style.visibility = 'visible';
-          itemToRemove.style.opacity = '1';
-        }
-      }, 0)
     }));
+    this.squidService.participants$.pipe(filter((participants) => !!participants?.length),take(1)).subscribe(participants => {
+      this.participantsLength = participants.length;
+      console.log('Number of participants: ' + this.participantsLength);
+      this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength);
+    });
   }
 
   userByName(index, item) {
@@ -97,7 +89,6 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   setCardsPosition(top, left): void {
-
     console.log('setCardsPosition');
     const cards = this.squidBoardElement?.nativeElement?.querySelectorAll('.flip-card');
     cards.forEach((el: HTMLElement, index) => {
@@ -144,33 +135,31 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   async removeItems(): Promise<Participant[]> {
-    //TODO(Roee): make this method works with observables
-    // of('').pipe(withLatestFrom(this.participants$))
-    let remainingParticipants = this.squidService.getParticipants();
+    let remainingParticipants = [...this.squidService.getParticipants()];
     const maxItemsToRemove = Math.ceil(this.participantsLength / 2);
     const removedItems: number[] = [];
     let index = 1;
+    console.log(this.participantsLength);
     if (this.participantsLength > 1) {
       while (index <= maxItemsToRemove) {
         const randomItemNumber = this.getRandomNumber(0, this.participantsLength - 1);
         if (removedItems.indexOf(randomItemNumber) === -1) {
-          console.log('remove item number: ' + remainingParticipants[randomItemNumber].name);
           const selector = `#card_${randomItemNumber}`;
+          console.log(selector);
           const itemToRemove: HTMLElement = this.squidBoardElement?.nativeElement?.querySelector(selector);
           itemToRemove.style.visibility = 'hidden';
           itemToRemove.style.opacity = '0';
+          console.log('remove item number: ' + remainingParticipants[randomItemNumber].name);
           removedItems.push(randomItemNumber);
           await this.delay(timeBetweenRemoveOfEachItem);
           index++;
         }
       }
-      this.recentlyRemovedItems = removedItems;
 
-      for (let index of this.recentlyRemovedItems) {
-        remainingParticipants.splice(index, 1);
+      for (let index of removedItems) {
+        remainingParticipants[index] = null;
       }
-      // Setting timeout in order to execute this code after
-
+      remainingParticipants = remainingParticipants.filter(value => !!value);
       await this.delay(delayAfterRemovingItems);
       return remainingParticipants;
     }
@@ -188,6 +177,13 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   startLottery(): void {
+    /*
+    * separate
+    * flip
+    * remove half
+    * setPosition
+    * remove
+     */
     this.separateOneByOne().subscribe(() => {
       this.flipThemAll().pipe(delay(delayBeforeRevealingAll)).subscribe((() => {
         this.removeItems().then((remainingParticipants) => {
@@ -207,14 +203,18 @@ export class AppComponent implements OnInit, AfterViewInit {
       }),
       delay(delayAfterSettingPosition),
       tap(() => {
+        console.log('setParticipant');
         this.squidService.setParticipants(remainingParticipants);
+        this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength);
+      }),
+      map(() => {
+        if (remainingParticipants.length === 1) {
+          this.declareWinner(remainingParticipants[0]);
+          return EMPTY;
+        }
       }),
       delay(delayBeforeSeparating)
     ).subscribe((flipThemAll => {
-      if (remainingParticipants.length === 1) {
-        this.declareWinner(remainingParticipants[0]);
-        return
-      }
       this.separateOneByOne().subscribe(() => {
         this.flipThemAll().subscribe(() => {
           this.removeItems().then((innerRemainingParticipants) => {
@@ -226,30 +226,26 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   private declareWinner(winner: Participant) {
-    this.flipThemAll().subscribe();
+    this.flipThemAll().subscribe()
     console.info('winner', winner);
   }
 
   private flipThemAll(): Observable<void> {
-    return of('').pipe(
-      withLatestFrom(this.participants$),
-      tap(console.log),
-      concatMap(([,participants], index) => from(participants).pipe(
-        concatMap((participant, index) => of({participant, index}).pipe(
-          delay(timeBetweenFlipEachItem),
-          map(({participant, index}) => {
-            console.log(participant, index)
-            // console.log('flip item number: ' + participant.name);
-            const selector = `#card_${index}`;
-            // console.log('flip item selector: ' + selector);
-            const itemToRemove: HTMLElement = this.squidBoardElement?.nativeElement?.querySelector(selector);
-            if (this.cardsAreOpen) {
-              itemToRemove.classList.remove('open');
-            } else {
-              itemToRemove.classList.add('open');
-            }
-          })
-        )))),
+    return from(this.squidService.getParticipants()).pipe(
+      concatMap((participant, index) => of({participant, index}).pipe(
+        delay(timeBetweenFlipEachItem),
+        map(({participant, index}) => {
+          // console.log('flip item number: ' + participant.name);
+          const selector = `#card_${index}`;
+          // console.log('flip item selector: ' + selector);
+          const itemToRemove: HTMLElement = this.squidBoardElement?.nativeElement?.querySelector(selector);
+          if (this.cardsAreOpen) {
+            itemToRemove.classList.remove('open');
+          } else {
+            itemToRemove.classList.add('open');
+          }
+        })
+      )),
       toArray(),
       tap(() => {
         this.cardsAreOpen = !this.cardsAreOpen;
