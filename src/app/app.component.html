@@ -1,11 +1,11 @@
 <div class="squid-board" #squidBoard>
   <div id="card_{{i}}" class="flip-card" *ngFor="let squid of participants$ | async; trackBy:userByName; let i = index"
-       [ngStyle]="{'width': squidSize.width, 'height': squidSize.height}">
+       [ngStyle]="{'width': squidSize.width+'px', 'height': squidSize.height+'px'}">
     <div class="flip-card-inner">
       <div class="flip-card-front">
       </div>
       <div class="flip-card-back">
-        <h1>{{squid.name}}</h1>
+        <h1 [style.font-size.px]="squidSize.height / 3">{{squid.name}}</h1>
       </div>
     </div>
   </div>

@@ -1,4 +1,4 @@
 export interface SquidSize {
-  width: string;
-  height: string;
+  width: number;
+  height: number;
 }

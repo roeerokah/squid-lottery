@@ -14,14 +14,12 @@ export class SquidService {
   private participantsList: Participant[] = [];
 
   constructor(private httpClient: HttpClient) {
-    const participantsNum: number = 400;
+    const names = ['Roee Rokah', 'Yelena kuznitzov', 'Shlomo Avarzil', 'Rina Mesukas'];
+    const participantsNum: number = 100;
     for (let i = 1 ; i <= participantsNum; i++) {
       this.participantsList.push({
-        name: `Test ${i}`,
+        name: names[i % 4],
         email: `Test_${i}@gmail.com`,
-        phone: '0543336252',
-        numberOfYearsInAngular: 5,
-        chance: 1
       });
     }
   }
@@ -43,8 +41,8 @@ export class SquidService {
     console.log('squidWidth', squidWidth);
     console.log('squidHeight', squidHeight);
     return {
-      width: `${squidWidth}px`,
-      height: `${squidHeight}px`
+      width: squidWidth,
+      height: squidHeight,
     };
   }
 

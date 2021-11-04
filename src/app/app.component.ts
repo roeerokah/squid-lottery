@@ -2,18 +2,18 @@ import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, O
 import {SquidService} from './squid.service';
 import {SquidSize} from './models/squid-size.model';
 import {Participant} from './models/participant.model';
-import {EMPTY, from, Observable, of} from 'rxjs';
-import {concatMap, delay, filter, map, mergeMapTo, take, tap, toArray} from 'rxjs/operators';
+import {EMPTY, from, NEVER, Observable, of} from 'rxjs';
+import {concatMap, delay, filter, map, mergeMapTo, switchMap, take, tap, toArray} from 'rxjs/operators';
 
-const delayBeforeRevealingAll = 1000;
-const timeBetweenRemoveOfEachItem = 10;
-const timeBetweenSeparationOfEach = 20;
-const timeBetweenFlipEachItem = 0;
-const delayAfterRemovingItems = 1000;
-const delayBeforeSeparating = 2000;
-const delayAfterSeparating = 1000;
-const delayAfterFlipThemAll = 1000;
-const delayAfterSettingPosition = 1000;
+let delayBeforeRevealingAll = 1000;
+let timeBetweenRemoveOfEachItem = 10;
+let timeBetweenSeparationOfEach = 20;
+let timeBetweenFlipEachItem = 0;
+let delayAfterRemovingItems = 1000;
+let delayBeforeSeparating = 2000;
+let delayAfterSeparating = 1000;
+let delayAfterFlipThemAll = 1000;
+let delayAfterSettingPosition = 1000;
 
 @Component({
   selector: 'app-root',
@@ -21,12 +21,11 @@ const delayAfterSettingPosition = 1000;
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit, AfterViewInit {
+  @ViewChild('squidBoard') squidBoardElement: ElementRef;
   title = 'squid-lottery';
   participants$: Observable<Participant[]>;
   squidSize: SquidSize;
   private participantsLength: number;
-
-  @ViewChild('squidBoard') squidBoardElement: ElementRef;
   private cardsAreOpen = false;
 
   constructor(private squidService: SquidService, private cd: ChangeDetectorRef) {
@@ -42,6 +41,7 @@ export class AppComponent implements OnInit, AfterViewInit {
       this.participantsLength = participants.length;
       console.log('Number of participants: ' + this.participantsLength);
       this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength);
+      this.cd.detectChanges();
     });
   }
 
@@ -134,9 +134,9 @@ export class AppComponent implements OnInit, AfterViewInit {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  async removeItems(): Promise<Participant[]> {
+  async removeItems(amount?: number): Promise<Participant[]> {
     let remainingParticipants = [...this.squidService.getParticipants()];
-    const maxItemsToRemove = Math.ceil(this.participantsLength / 2);
+    const maxItemsToRemove = amount ?? Math.ceil(this.participantsLength / 2);
     const removedItems: number[] = [];
     let index = 1;
     console.log(this.participantsLength);
@@ -172,8 +172,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
 
   ngAfterViewInit(): void {
-    // this.stackCards(0.2);
-   this.startLottery();
+    this.startLottery();
   }
 
   startLottery(): void {
@@ -198,35 +197,73 @@ export class AppComponent implements OnInit, AfterViewInit {
     this.cd.detectChanges();
 
     this.flipThemAll().pipe(
+      take(1),
       tap(() => {
         this.setCardsPosition(0, 0);
       }),
       delay(delayAfterSettingPosition),
       tap(() => {
-        console.log('setParticipant');
-        this.squidService.setParticipants(remainingParticipants);
-        this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength);
+        this.setRemainingAndCalcSize(remainingParticipants)
       }),
       map(() => {
-        if (remainingParticipants.length === 1) {
-          this.declareWinner(remainingParticipants[0]);
-          return EMPTY;
+        if (remainingParticipants.length < 50) {
+          timeBetweenRemoveOfEachItem = 50
+          delayAfterRemovingItems = 2500;
+
         }
       }),
-      delay(delayBeforeSeparating)
+      delay(delayBeforeSeparating),
+      switchMap(() => this.separateOneByOne()),
+      switchMap(() => this.flipThemAll()),
     ).subscribe((flipThemAll => {
-      this.separateOneByOne().subscribe(() => {
-        this.flipThemAll().subscribe(() => {
-          this.removeItems().then((innerRemainingParticipants) => {
-            this.continueLottery(innerRemainingParticipants);
-          });
-        })
-      })
+      this.removeItems().then((innerRemainingParticipants) => {
+        if (innerRemainingParticipants.length <= 20) {
+          this.flipThemAll().pipe(take(1)).subscribe(() => {
+
+            timeBetweenRemoveOfEachItem = 800; // Remove slowly in the end
+            this.setCardsPosition(0, 0);
+            this.delay(delayAfterSettingPosition).then(() => {
+              this.setRemainingAndCalcSize(innerRemainingParticipants);
+              this.delay(delayBeforeSeparating).then(() => {
+                this.separateOneByOne().pipe(take(1)).subscribe(() => {
+                  this.flipThemAll().pipe(take(1)).subscribe(() => {
+
+                    delayAfterRemovingItems = 200;
+                    this.removeItems(innerRemainingParticipants.length - 1).then((innerRemainingParticipants) => {
+                      this.setCardsPosition(0,0);
+                      this.setRemainingAndCalcSize(innerRemainingParticipants);
+                      this.declareWinner(innerRemainingParticipants[0]);
+                    })
+                  })
+                })
+              })
+            })
+          })
+        } else {
+          this.continueLottery(innerRemainingParticipants);
+        }
+      });
     }));
   }
 
+  private setRemainingAndCalcSize(remainingParticipants: Participant[]) {
+    console.log('setParticipant');
+    this.squidService.setParticipants(remainingParticipants);
+    this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength);
+    setTimeout(() => {
+
+      for (let i = 0; i < remainingParticipants.length; i++) {
+        const selector = `#card_${i}`;
+        console.log(selector);
+        const itemToRemove: HTMLElement = this.squidBoardElement?.nativeElement?.querySelector(selector);
+        itemToRemove.style.visibility = 'visible';
+        itemToRemove.style.opacity = '1';
+      }
+      this.cd.detectChanges();
+    }, 0)
+  }
+
   private declareWinner(winner: Participant) {
-    this.flipThemAll().subscribe()
     console.info('winner', winner);
   }
 
