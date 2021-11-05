@@ -20,7 +20,7 @@ let delayAfterSettingPosition = 1000;
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent implements OnInit, AfterViewInit {
+export class AppComponent implements OnInit {
   @ViewChild('squidBoard') squidBoardElement: ElementRef;
   title = 'squid-lottery';
   participants$: Observable<Participant[]>;
@@ -33,7 +33,9 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.squidService.refreshParticipants()
-    this.participants$ = this.squidService.participants$.pipe(tap(participants => {
+    this.participants$ = this.squidService.participants$.pipe(
+      filter((p) => !!p?.length),
+      tap(participants => {
       this.participantsLength = participants.length;
       console.log('Number of participants: ' + this.participantsLength);
     }));
@@ -42,6 +44,9 @@ export class AppComponent implements OnInit, AfterViewInit {
       console.log('Number of participants: ' + this.participantsLength);
       this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength);
       this.cd.detectChanges();
+      setTimeout(() => {
+        this.startLottery();
+      }, 1000)
     });
   }
 
@@ -170,10 +175,6 @@ export class AppComponent implements OnInit, AfterViewInit {
       max = Math.floor(max);
       return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive
     }
-
-  ngAfterViewInit(): void {
-    this.startLottery();
-  }
 
   startLottery(): void {
     /*
