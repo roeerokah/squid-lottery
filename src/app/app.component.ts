@@ -4,16 +4,17 @@ import {SquidSize} from './models/squid-size.model';
 import {Participant} from './models/participant.model';
 import {EMPTY, from, NEVER, Observable, of} from 'rxjs';
 import {concatMap, delay, filter, map, mergeMapTo, switchMap, take, tap, toArray} from 'rxjs/operators';
+import confetti from 'canvas-confetti';
 
-let delayBeforeRevealingAll = 1000;
+const delayBeforeRevealingAll = 1000;
 let timeBetweenRemoveOfEachItem = 10;
-let timeBetweenSeparationOfEach = 20;
-let timeBetweenFlipEachItem = 0;
+const timeBetweenSeparationOfEach = 20;
+const timeBetweenFlipEachItem = 0;
 let delayAfterRemovingItems = 1000;
-let delayBeforeSeparating = 2000;
-let delayAfterSeparating = 1000;
-let delayAfterFlipThemAll = 1000;
-let delayAfterSettingPosition = 1000;
+const delayBeforeSeparating = 2000;
+const delayAfterSeparating = 1000;
+const delayAfterFlipThemAll = 1000;
+const delayAfterSettingPosition = 1000;
 
 @Component({
   selector: 'app-root',
@@ -32,12 +33,12 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-    this.squidService.refreshParticipants()
+    this.squidService.refreshParticipants();
     this.participants$ = this.squidService.participants$.pipe(tap(participants => {
       this.participantsLength = participants.length;
       console.log('Number of participants: ' + this.participantsLength);
     }));
-    this.squidService.participants$.pipe(filter((participants) => !!participants?.length),take(1)).subscribe(participants => {
+    this.squidService.participants$.pipe(filter((participants) => !!participants?.length), take(1)).subscribe(participants => {
       this.participantsLength = participants.length;
       console.log('Number of participants: ' + this.participantsLength);
       this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength);
@@ -156,7 +157,7 @@ export class AppComponent implements OnInit, AfterViewInit {
         }
       }
 
-      for (let index of removedItems) {
+      for (const index of removedItems) {
         remainingParticipants[index] = null;
       }
       remainingParticipants = remainingParticipants.filter(value => !!value);
@@ -168,7 +169,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   getRandomNumber(min, max): number {
       min = Math.ceil(min);
       max = Math.floor(max);
-      return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive
+      return Math.floor(Math.random() * (max - min + 1) + min); // The maximum is inclusive and the minimum is inclusive
     }
 
   ngAfterViewInit(): void {
@@ -187,7 +188,7 @@ export class AppComponent implements OnInit, AfterViewInit {
       this.flipThemAll().pipe(delay(delayBeforeRevealingAll)).subscribe((() => {
         this.removeItems().then((remainingParticipants) => {
           this.continueLottery(remainingParticipants);
-        })
+        });
       }));
     });
   }
@@ -203,11 +204,11 @@ export class AppComponent implements OnInit, AfterViewInit {
       }),
       delay(delayAfterSettingPosition),
       tap(() => {
-        this.setRemainingAndCalcSize(remainingParticipants)
+        this.setRemainingAndCalcSize(remainingParticipants);
       }),
       map(() => {
         if (remainingParticipants.length < 50) {
-          timeBetweenRemoveOfEachItem = 50
+          timeBetweenRemoveOfEachItem = 50;
           delayAfterRemovingItems = 2500;
 
         }
@@ -230,15 +231,15 @@ export class AppComponent implements OnInit, AfterViewInit {
 
                     delayAfterRemovingItems = 200;
                     this.removeItems(innerRemainingParticipants.length - 1).then((innerRemainingParticipants) => {
-                      this.setCardsPosition(0,0);
+                      this.setCardsPosition(0, 0);
                       this.setRemainingAndCalcSize(innerRemainingParticipants);
                       this.declareWinner(innerRemainingParticipants[0]);
-                    })
-                  })
-                })
-              })
-            })
-          })
+                    });
+                  });
+                });
+              });
+            });
+          });
         } else {
           this.continueLottery(innerRemainingParticipants);
         }
@@ -260,10 +261,11 @@ export class AppComponent implements OnInit, AfterViewInit {
         itemToRemove.style.opacity = '1';
       }
       this.cd.detectChanges();
-    }, 0)
+    }, 0);
   }
 
-  private declareWinner(winner: Participant) {
+  private declareWinner(winner: Participant): void {
+    this.showConfetti();
     console.info('winner', winner);
   }
 
@@ -290,6 +292,29 @@ export class AppComponent implements OnInit, AfterViewInit {
       }),
       delay(delayAfterFlipThemAll),
       mergeMapTo(of(null))
-    )
+    );
+  }
+
+  private getRandomInRange(min, max): number {
+    return Math.random() * (max - min) + min;
+  }
+
+  private showConfetti(): void{
+    const duration = 200 * 1000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+    const interval = setInterval(() => {
+      const timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        return clearInterval(interval);
+      }
+
+      const particleCount = 50 * (timeLeft / duration);
+      // since particles fall down, start a bit higher than random
+      confetti(Object.assign({}, defaults, { particleCount, origin: { x: this.getRandomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+      confetti(Object.assign({}, defaults, { particleCount, origin: { x: this.getRandomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+    }, 250);
   }
 }
