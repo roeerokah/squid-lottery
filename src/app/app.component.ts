@@ -321,7 +321,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   private showConfetti(): void{
-    const duration = 200 * 1000;
+    const duration = 1000 * 1000;
     const animationEnd = Date.now() + duration;
     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
 
