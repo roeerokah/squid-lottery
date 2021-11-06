@@ -13,7 +13,7 @@
     </div>
   </div>
 
-  <div class="outer" [ngClass]="{'countdown': lotteryStatus === LotteryStatus.PRECOUNTDOWN}" *ngIf="lotteryStatus === LotteryStatus.START || lotteryStatus === LotteryStatus.COUNTDOWN  || lotteryStatus === LotteryStatus.PRECOUNTDOWN" (click)="startCountdown()">
+  <div class="outer" [ngClass]="{'countdown': lotteryStatus === LotteryStatus.PRECOUNTDOWN ,'disabled': lotteryStatus === LotteryStatus.COUNTDOWN}" *ngIf="lotteryStatus === LotteryStatus.START || lotteryStatus === LotteryStatus.COUNTDOWN  || lotteryStatus === LotteryStatus.PRECOUNTDOWN" (click)="startCountdown()">
     <div class="mask">
       <div class="ring"></div>
     </div>
