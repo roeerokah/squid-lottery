@@ -1,14 +1,32 @@
-<div class="squid-board" #squidBoard>
-  <div id="card_{{i}}" class="flip-card" *ngFor="let squid of participants$ | async; trackBy:userByName; let i = index"
-       [ngStyle]="{'width': squidSize.width+'px', 'height': squidSize.height+'px'}">
-    <div class="flip-card-inner">
-      <div class="flip-card-front">
-      </div>
-      <div class="flip-card-back">
-        <h1 [style.font-size.px]="squidSize.height / 3">{{squid.name}}</h1>
+<div class="squid-board" [ngClass]="{'center': lotteryStatus === LotteryStatus.START || lotteryStatus === LotteryStatus.COUNTDOWN || lotteryStatus === LotteryStatus.PRECOUNTDOWN}" #squidBoard>
+  <div class="flip-cards-container" *ngIf="lotteryStatus === LotteryStatus.PROCESSING">
+    <div id="card_{{i}}" class="flip-card"
+         *ngFor="let squid of participants$ | async; trackBy:userByName; let i = index"
+         [ngStyle]="{'width': squidSize.width+'px', 'height': squidSize.height+'px'}">
+      <div class="flip-card-inner">
+        <div class="flip-card-front">
+        </div>
+        <div class="flip-card-back">
+          <h1 [style.font-size.px]="squidSize.height / 3">{{squid.name}}</h1>
+        </div>
       </div>
     </div>
   </div>
+
+  <div class="outer" [ngClass]="{'countdown': lotteryStatus === LotteryStatus.PRECOUNTDOWN}" *ngIf="lotteryStatus === LotteryStatus.START || lotteryStatus === LotteryStatus.COUNTDOWN  || lotteryStatus === LotteryStatus.PRECOUNTDOWN" (click)="startCountdown()">
+    <div class="mask">
+      <div class="ring"></div>
+    </div>
+    <div class="text" *ngIf="lotteryStatus === LotteryStatus.START">Start</div>
+
+    <div class="text" *ngIf="lotteryStatus === LotteryStatus.COUNTDOWN">
+      <ng-container [counter]="'11'" [interval]="'1000'" (value)="counterEvent($event)">
+        <h3>{{ counter }}</h3>
+      </ng-container>
+    </div>
+  </div>
 </div>
+
+
 
 

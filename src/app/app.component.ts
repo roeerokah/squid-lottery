@@ -2,9 +2,10 @@ import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, O
 import {SquidService} from './squid.service';
 import {SquidSize} from './models/squid-size.model';
 import {Participant} from './models/participant.model';
-import {EMPTY, from, NEVER, Observable, of} from 'rxjs';
+import {from, Observable, of} from 'rxjs';
 import {concatMap, delay, filter, map, mergeMapTo, switchMap, take, tap, toArray} from 'rxjs/operators';
 import confetti from 'canvas-confetti';
+import {LotteryStatus} from './enums/abstract-control-status.enum';
 
 const delayBeforeRevealingAll = 1000;
 let timeBetweenRemoveOfEachItem = 10;
@@ -22,28 +23,22 @@ const delayAfterSettingPosition = 1000;
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit, AfterViewInit {
+  readonly LotteryStatus = LotteryStatus;
   @ViewChild('squidBoard') squidBoardElement: ElementRef;
   title = 'squid-lottery';
   participants$: Observable<Participant[]>;
   squidSize: SquidSize;
   private participantsLength: number;
   private cardsAreOpen = false;
+  lotteryStatus: LotteryStatus;
+  counter: number;
 
   constructor(private squidService: SquidService, private cd: ChangeDetectorRef) {
   }
 
   ngOnInit(): void {
-    this.squidService.refreshParticipants();
-    this.participants$ = this.squidService.participants$.pipe(tap(participants => {
-      this.participantsLength = participants.length;
-      console.log('Number of participants: ' + this.participantsLength);
-    }));
-    this.squidService.participants$.pipe(filter((participants) => !!participants?.length), take(1)).subscribe(participants => {
-      this.participantsLength = participants.length;
-      console.log('Number of participants: ' + this.participantsLength);
-      this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength);
-      this.cd.detectChanges();
-    });
+    this.lotteryStatus = LotteryStatus.START;
+
   }
 
   userByName(index, item) {
@@ -173,7 +168,21 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
 
   ngAfterViewInit(): void {
-    this.startLottery();
+    // this.startLottery();
+  }
+
+  startCountdown(): void {
+    this.lotteryStatus = LotteryStatus.PRECOUNTDOWN;
+    setTimeout(() => {
+      this.lotteryStatus = LotteryStatus.COUNTDOWN;
+    }, 1000);
+  }
+
+  counterEvent(value): void {
+    if (value === 0) {
+      this.startLottery();
+    }
+    this.counter = value;
   }
 
   startLottery(): void {
@@ -184,6 +193,18 @@ export class AppComponent implements OnInit, AfterViewInit {
     * setPosition
     * remove
      */
+    this.lotteryStatus = LotteryStatus.PROCESSING;
+    this.squidService.refreshParticipants();
+    this.participants$ = this.squidService.participants$.pipe(tap(participants => {
+      this.participantsLength = participants.length;
+      console.log('Number of participants: ' + this.participantsLength);
+    }));
+    this.squidService.participants$.pipe(filter((participants) => !!participants?.length), take(1)).subscribe(participants => {
+      this.participantsLength = participants.length;
+      console.log('Number of participants: ' + this.participantsLength);
+      this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength);
+      this.cd.detectChanges();
+    });
     this.separateOneByOne().subscribe(() => {
       this.flipThemAll().pipe(delay(delayBeforeRevealingAll)).subscribe((() => {
         this.removeItems().then((remainingParticipants) => {
