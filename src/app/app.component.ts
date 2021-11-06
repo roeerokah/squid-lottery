@@ -1,9 +1,10 @@
-import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, OnInit, ViewChild} from '@angular/core';
+import {ChangeDetectorRef, Component, ElementRef, HostListener, OnInit, ViewChild} from '@angular/core';
 import {SquidService} from './squid.service';
 import {SquidSize} from './models/squid-size.model';
 import {Participant} from './models/participant.model';
-import {EMPTY, from, NEVER, Observable, of} from 'rxjs';
+import { from, Observable, of} from 'rxjs';
 import {concatMap, delay, filter, map, mergeMapTo, switchMap, take, tap, toArray} from 'rxjs/operators';
+import confetti from 'canvas-confetti';
 
 let delayBeforeRevealingAll = 1000;
 let timeBetweenRemoveOfEachItem = 10;
@@ -32,14 +33,14 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.squidService.refreshParticipants()
+    this.squidService.refreshParticipants();
     this.participants$ = this.squidService.participants$.pipe(
       filter((p) => !!p?.length),
       tap(participants => {
       this.participantsLength = participants.length;
       console.log('Number of participants: ' + this.participantsLength);
     }));
-    this.squidService.participants$.pipe(filter((participants) => !!participants?.length),take(1)).subscribe(participants => {
+    this.squidService.participants$.pipe(filter((participants) => !!participants?.length), take(1)).subscribe(participants => {
       this.participantsLength = participants.length;
       console.log('Number of participants: ' + this.participantsLength);
       this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength);
@@ -81,7 +82,7 @@ export class AppComponent implements OnInit {
       const cardHeight = this.squidBoardElement?.nativeElement?.querySelector('.flip-card').clientHeight;
       const leftStep = cardWidth + cardSpacing;
       const cards = this.squidBoardElement?.nativeElement?.querySelectorAll('.flip-card');
-      cards.forEach((el: HTMLElement, index) => {
+      cards.forEach((el: HTMLElement,) => {
         el.style.marginLeft = `${left}px`;
         el.style.marginTop = `${top}px`;
         left = left + leftStep;
@@ -96,7 +97,7 @@ export class AppComponent implements OnInit {
   setCardsPosition(top, left): void {
     console.log('setCardsPosition');
     const cards = this.squidBoardElement?.nativeElement?.querySelectorAll('.flip-card');
-    cards.forEach((el: HTMLElement, index) => {
+    cards.forEach((el: HTMLElement, ) => {
       el.style.marginTop = '0';
       el.style.marginLeft = '0';
       el.style.top = `${top}px`;
@@ -161,7 +162,7 @@ export class AppComponent implements OnInit {
         }
       }
 
-      for (let index of removedItems) {
+      for (const index of removedItems) {
         remainingParticipants[index] = null;
       }
       remainingParticipants = remainingParticipants.filter(value => !!value);
@@ -188,7 +189,7 @@ export class AppComponent implements OnInit {
       this.flipThemAll().pipe(delay(delayBeforeRevealingAll)).subscribe((() => {
         this.removeItems().then((remainingParticipants) => {
           this.continueLottery(remainingParticipants);
-        })
+        });
       }));
     });
   }
@@ -204,19 +205,18 @@ export class AppComponent implements OnInit {
       }),
       delay(delayAfterSettingPosition),
       tap(() => {
-        this.setRemainingAndCalcSize(remainingParticipants)
+        this.setRemainingAndCalcSize(remainingParticipants);
       }),
       map(() => {
         if (remainingParticipants.length < 50) {
-          timeBetweenRemoveOfEachItem = 50
+          timeBetweenRemoveOfEachItem = 50;
           delayAfterRemovingItems = 2500;
-
         }
       }),
       delay(delayBeforeSeparating),
       switchMap(() => this.separateOneByOne()),
       switchMap(() => this.flipThemAll()),
-    ).subscribe((flipThemAll => {
+    ).subscribe((() => {
       this.removeItems().then((innerRemainingParticipants) => {
         if (innerRemainingParticipants.length <= 20) {
           this.flipThemAll().pipe(take(1)).subscribe(() => {
@@ -231,15 +231,15 @@ export class AppComponent implements OnInit {
 
                     delayAfterRemovingItems = 200;
                     this.removeItems(innerRemainingParticipants.length - 1).then((innerRemainingParticipants) => {
-                      this.setCardsPosition(0,0);
+                      this.setCardsPosition(0, 0);
                       this.setRemainingAndCalcSize(innerRemainingParticipants);
                       this.declareWinner(innerRemainingParticipants[0]);
-                    })
-                  })
-                })
-              })
-            })
-          })
+                    });
+                  });
+                });
+              });
+            });
+          });
         } else {
           this.continueLottery(innerRemainingParticipants);
         }
@@ -261,10 +261,11 @@ export class AppComponent implements OnInit {
         itemToRemove.style.opacity = '1';
       }
       this.cd.detectChanges();
-    }, 0)
+    }, 0);
   }
 
-  private declareWinner(winner: Participant) {
+  private declareWinner(winner: Participant): void {
+    this.showConfetti();
     console.info('winner', winner);
   }
 
@@ -291,6 +292,29 @@ export class AppComponent implements OnInit {
       }),
       delay(delayAfterFlipThemAll),
       mergeMapTo(of(null))
-    )
+    );
+  }
+
+  private getRandomInRange(min, max): number {
+    return Math.random() * (max - min) + min;
+  }
+
+  private showConfetti(): void{
+    const duration = 200 * 1000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+    const interval = setInterval(() => {
+      const timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        return clearInterval(interval);
+      }
+
+      const particleCount = 50 * (timeLeft / duration);
+      // since particles fall down, start a bit higher than random
+      confetti(Object.assign({}, defaults, { particleCount, origin: { x: this.getRandomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+      confetti(Object.assign({}, defaults, { particleCount, origin: { x: this.getRandomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+    }, 250);
   }
 }
