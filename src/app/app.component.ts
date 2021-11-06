@@ -5,6 +5,7 @@ import {Participant} from './models/participant.model';
 import { from, Observable, of} from 'rxjs';
 import {concatMap, delay, filter, map, mergeMapTo, switchMap, take, tap, toArray} from 'rxjs/operators';
 import confetti from 'canvas-confetti';
+import {LotteryStatus} from './enums/abstract-control-status.enum';
 
 let delayBeforeRevealingAll = 1000;
 let timeBetweenRemoveOfEachItem = 10;
@@ -22,33 +23,22 @@ let delayAfterSettingPosition = 1000;
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
+  readonly LotteryStatus = LotteryStatus;
   @ViewChild('squidBoard') squidBoardElement: ElementRef;
   title = 'squid-lottery';
   participants$: Observable<Participant[]>;
   squidSize: SquidSize;
   private participantsLength: number;
   private cardsAreOpen = false;
+  lotteryStatus: LotteryStatus;
+  counter: number;
 
   constructor(private squidService: SquidService, private cd: ChangeDetectorRef) {
   }
 
   ngOnInit(): void {
     this.squidService.refreshParticipants();
-    this.participants$ = this.squidService.participants$.pipe(
-      filter((p) => !!p?.length),
-      tap(participants => {
-      this.participantsLength = participants.length;
-      console.log('Number of participants: ' + this.participantsLength);
-    }));
-    this.squidService.participants$.pipe(filter((participants) => !!participants?.length), take(1)).subscribe(participants => {
-      this.participantsLength = participants.length;
-      console.log('Number of participants: ' + this.participantsLength);
-      this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength);
-      this.cd.detectChanges();
-      setTimeout(() => {
-        this.startLottery();
-      }, 1000)
-    });
+    this.lotteryStatus = LotteryStatus.START;
   }
 
   userByName(index, item) {
@@ -177,6 +167,20 @@ export class AppComponent implements OnInit {
       return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive
     }
 
+  startCountdown(): void {
+    this.lotteryStatus = LotteryStatus.PRECOUNTDOWN;
+    setTimeout(() => {
+      this.lotteryStatus = LotteryStatus.COUNTDOWN;
+    }, 1000);
+  }
+
+  counterEvent(value): void {
+    if (value === 0) {
+      this.startLottery();
+    }
+    this.counter = value;
+  }
+
   startLottery(): void {
     /*
     * separate
@@ -185,6 +189,19 @@ export class AppComponent implements OnInit {
     * setPosition
     * remove
      */
+    this.lotteryStatus = LotteryStatus.PROCESSING;
+    this.participants$ = this.squidService.participants$.pipe(
+      filter((p) => !!p?.length),
+      tap(participants => {
+        this.participantsLength = participants.length;
+        console.log('Number of participants: ' + this.participantsLength);
+      }));
+    this.squidService.participants$.pipe(filter((participants) => !!participants?.length), take(1)).subscribe(participants => {
+      this.participantsLength = participants.length;
+      console.log('Number of participants: ' + this.participantsLength);
+      this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength);
+      this.cd.detectChanges();
+    });
     this.separateOneByOne().subscribe(() => {
       this.flipThemAll().pipe(delay(delayBeforeRevealingAll)).subscribe((() => {
         this.removeItems().then((remainingParticipants) => {
@@ -300,7 +317,7 @@ export class AppComponent implements OnInit {
   }
 
   private showConfetti(): void{
-    const duration = 200 * 1000;
+    const duration = 1000 * 1000;
     const animationEnd = Date.now() + duration;
     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
 
