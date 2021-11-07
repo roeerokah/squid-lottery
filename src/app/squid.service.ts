@@ -3,6 +3,7 @@ import {SquidSize} from './models/squid-size.model';
 import {HttpClient} from '@angular/common/http';
 import {Participant} from './models/participant.model';
 import {BehaviorSubject, Observable, of} from 'rxjs';
+import {config} from "../config/config";
 
 @Injectable({
   providedIn: 'root'
@@ -25,7 +26,7 @@ export class SquidService {
   }
 
   refreshParticipants(): void {
-    this.httpClient.get<Participant[]>(`${this.URL}participants?offline=true`).subscribe(participants => {
+    this.httpClient.get<Participant[]>(`${this.URL}participants?fromSheet=${config.fromSheet}`).subscribe(participants => {
       console.log(participants);
       this._participants$.next(participants);
     })
@@ -51,5 +52,9 @@ export class SquidService {
 
   setParticipants(remainingParticipants: Participant[]) {
     this._participants$.next(remainingParticipants)
+  }
+
+  declareWinners(winners: Record<string, Participant>): Observable<void> {
+    return this.httpClient.post<void>(`${this.URL}declare-winner?writeToSheet=${config.writeToSheet}`, winners)
   }
 }

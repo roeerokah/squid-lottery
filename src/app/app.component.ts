@@ -32,6 +32,7 @@ export class AppComponent implements OnInit {
   private cardsAreOpen = false;
   lotteryStatus: LotteryStatus;
   counter: number;
+  winners: Record<string, Participant> = {};
 
   constructor(private squidService: SquidService, private cd: ChangeDetectorRef) {
   }
@@ -134,10 +135,10 @@ export class AppComponent implements OnInit {
     let remainingParticipants = [...this.squidService.getParticipants()];
     const maxItemsToRemove = amount ?? Math.ceil(this.participantsLength / 2);
     const removedItems: number[] = [];
-    let index = 1;
+    let removedCounter = 1;
     console.log(this.participantsLength);
     if (this.participantsLength > 1) {
-      while (index <= maxItemsToRemove) {
+      while (removedCounter <= maxItemsToRemove) {
         const randomItemNumber = this.getRandomNumber(0, this.participantsLength - 1);
         if (removedItems.indexOf(randomItemNumber) === -1) {
           const selector = `#card_${randomItemNumber}`;
@@ -147,8 +148,13 @@ export class AppComponent implements OnInit {
           itemToRemove.style.opacity = '0';
           console.log('remove item number: ' + remainingParticipants[randomItemNumber].name);
           removedItems.push(randomItemNumber);
+
+          const participantPlace = this.participantsLength - removedCounter + 1;
+          if (participantPlace <= 10) {
+            this.winners[participantPlace] = { ...remainingParticipants[randomItemNumber]};
+          }
           await this.delay(timeBetweenRemoveOfEachItem);
-          index++;
+          removedCounter++;
         }
       }
 
@@ -287,6 +293,9 @@ export class AppComponent implements OnInit {
   private declareWinner(winner: Participant): void {
     this.showConfetti();
     console.info('winner', winner);
+    this.winners[1] = winner;
+    this.squidService.declareWinners(this.winners).subscribe();
+    console.log(this.winners);
   }
 
   private flipThemAll(): Observable<void> {
