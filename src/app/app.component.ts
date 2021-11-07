@@ -16,6 +16,7 @@ const delayBeforeSeparating = 2000;
 const delayAfterSeparating = 1000;
 const delayAfterFlipThemAll = 1000;
 const delayAfterSettingPosition = 1000;
+const padding = 5;
 
 @Component({
   selector: 'app-root',
@@ -48,7 +49,7 @@ export class AppComponent implements OnInit {
 
   @HostListener('window:resize', ['$event'])
   onResize(event): void {
-    this.squidSize = this.squidService.calcSquidSize(event.target.innerWidth, event.target.innerHeight, this.participantsLength);
+    this.squidSize = this.squidService.calcSquidSize(event.target.innerWidth, event.target.innerHeight, this.participantsLength, padding);
   }
 
   stackCards(margin: number): void {
@@ -85,7 +86,7 @@ export class AppComponent implements OnInit {
     }, 1000);
   }
 
-  setCardsPosition(top, left): void {
+  setCardsPosition(top = padding, left = padding): void {
     console.log('setCardsPosition');
     const cards = this.squidBoardElement?.nativeElement?.querySelectorAll('.flip-card');
     cards.forEach((el: HTMLElement, ) => {
@@ -98,7 +99,7 @@ export class AppComponent implements OnInit {
 
   separateOneByOne(): Observable<void> {
     const cardContainerWidth = this.squidBoardElement?.nativeElement.clientWidth;
-    const cardSpacing = 0;
+    const cardSpacing = padding;
     let left = 0;
     const cardWidth = this.squidBoardElement?.nativeElement?.querySelector('.flip-card').clientWidth;
     const cardHeight = this.squidBoardElement?.nativeElement?.querySelector('.flip-card').clientHeight;
@@ -208,7 +209,7 @@ export class AppComponent implements OnInit {
     this.squidService.participants$.pipe(filter((participants) => !!participants?.length), take(1)).subscribe(participants => {
       this.participantsLength = participants.length;
       console.log('Number of participants: ' + this.participantsLength);
-      this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength);
+      this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength, padding);
       this.cd.detectChanges();
     });
     this.separateOneByOne().subscribe(() => {
@@ -227,7 +228,7 @@ export class AppComponent implements OnInit {
     this.flipThemAll().pipe(
       take(1),
       tap(() => {
-        this.setCardsPosition(0, 0);
+        this.setCardsPosition();
       }),
       delay(delayAfterSettingPosition),
       tap(() => {
@@ -248,7 +249,7 @@ export class AppComponent implements OnInit {
           this.flipThemAll().pipe(take(1)).subscribe(() => {
 
             timeBetweenRemoveOfEachItem = 800; // Remove slowly in the end
-            this.setCardsPosition(0, 0);
+            this.setCardsPosition();
             this.delay(delayAfterSettingPosition).then(() => {
               this.setRemainingAndCalcSize(innerRemainingParticipants);
               this.delay(delayBeforeSeparating).then(() => {
@@ -257,7 +258,7 @@ export class AppComponent implements OnInit {
 
                     delayAfterRemovingItems = 200;
                     this.removeItems(innerRemainingParticipants.length - 1).then((innerRemainingParticipants) => {
-                      this.setCardsPosition(0, 0);
+                      this.setCardsPosition();
                       this.setRemainingAndCalcSize(innerRemainingParticipants);
                       this.declareWinner(innerRemainingParticipants[0]);
                     });
@@ -276,7 +277,7 @@ export class AppComponent implements OnInit {
   private setRemainingAndCalcSize(remainingParticipants: Participant[]) {
     console.log('setParticipant');
     this.squidService.setParticipants(remainingParticipants);
-    this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength);
+    this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength, padding);
     setTimeout(() => {
 
       for (let i = 0; i < remainingParticipants.length; i++) {

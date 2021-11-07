@@ -36,7 +36,7 @@ export class SquidService {
     return this._participants$.value;
   }
 
-  calcSquidSize(innerWidth: number, innerHeight: number, squidLength: number): SquidSize {
+  calcSquidSize(innerWidth: number, innerHeight: number, squidLength: number, padding: number): SquidSize {
     const squidPerRow = Math.ceil(Math.sqrt(squidLength));
 
     const squidWidth = innerWidth / squidPerRow;
@@ -45,8 +45,8 @@ export class SquidService {
     console.log('squidWidth', squidWidth);
     console.log('squidHeight', squidHeight);
     return {
-      width: squidWidth,
-      height: squidHeight,
+      width: squidWidth - padding,
+      height: squidHeight - padding,
     };
   }
 
