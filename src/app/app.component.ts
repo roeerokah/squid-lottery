@@ -7,15 +7,15 @@ import {concatMap, delay, filter, map, mergeMapTo, switchMap, take, tap, toArray
 import confetti from 'canvas-confetti';
 import {LotteryStatus} from './enums/abstract-control-status.enum';
 
-let delayBeforeRevealingAll = 1000;
+const delayBeforeRevealingAll = 1000;
 let timeBetweenRemoveOfEachItem = 10;
-let timeBetweenSeparationOfEach = 20;
-let timeBetweenFlipEachItem = 0;
+const timeBetweenSeparationOfEach = 20;
+const timeBetweenFlipEachItem = 0;
 let delayAfterRemovingItems = 1000;
-let delayBeforeSeparating = 2000;
-let delayAfterSeparating = 1000;
-let delayAfterFlipThemAll = 1000;
-let delayAfterSettingPosition = 1000;
+const delayBeforeSeparating = 2000;
+const delayAfterSeparating = 1000;
+const delayAfterFlipThemAll = 1000;
+const delayAfterSettingPosition = 1000;
 
 @Component({
   selector: 'app-root',
@@ -72,7 +72,7 @@ export class AppComponent implements OnInit {
       const cardHeight = this.squidBoardElement?.nativeElement?.querySelector('.flip-card').clientHeight;
       const leftStep = cardWidth + cardSpacing;
       const cards = this.squidBoardElement?.nativeElement?.querySelectorAll('.flip-card');
-      cards.forEach((el: HTMLElement,) => {
+      cards.forEach((el: HTMLElement, ) => {
         el.style.marginLeft = `${left}px`;
         el.style.marginTop = `${top}px`;
         left = left + leftStep;
@@ -164,11 +164,12 @@ export class AppComponent implements OnInit {
   getRandomNumber(min, max): number {
       min = Math.ceil(min);
       max = Math.floor(max);
-      return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive
+      return Math.floor(Math.random() * (max - min + 1) + min); // The maximum is inclusive and the minimum is inclusive
     }
 
   startCountdown(): void {
     this.lotteryStatus = LotteryStatus.PRECOUNTDOWN;
+    this.playAudio();
     setTimeout(() => {
       this.lotteryStatus = LotteryStatus.COUNTDOWN;
     }, 300);
@@ -333,5 +334,12 @@ export class AppComponent implements OnInit {
       confetti(Object.assign({}, defaults, { particleCount, origin: { x: this.getRandomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
       confetti(Object.assign({}, defaults, { particleCount, origin: { x: this.getRandomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
     }, 250);
+  }
+
+  private playAudio(): void{
+    const audio = new Audio();
+    audio.src = '../../../assets/audio/next-audio.mp3';
+    audio.load();
+    audio.play();
   }
 }
