@@ -1,6 +1,6 @@
 import { Directive, Input, Output, EventEmitter, OnChanges, OnDestroy } from '@angular/core';
 
-import { Subject, Observable, Subscription, timer } from 'rxjs';
+import { Subject, Subscription, timer } from 'rxjs';
 import { switchMap, take, tap } from 'rxjs/operators';
 
 @Directive({

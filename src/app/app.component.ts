@@ -1,28 +1,28 @@
-import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, OnInit, ViewChild} from '@angular/core';
+import {ChangeDetectorRef, Component, ElementRef, HostListener, OnInit, ViewChild} from '@angular/core';
 import {SquidService} from './squid.service';
 import {SquidSize} from './models/squid-size.model';
 import {Participant} from './models/participant.model';
-import {from, Observable, of} from 'rxjs';
+import { from, Observable, of} from 'rxjs';
 import {concatMap, delay, filter, map, mergeMapTo, switchMap, take, tap, toArray} from 'rxjs/operators';
 import confetti from 'canvas-confetti';
 import {LotteryStatus} from './enums/abstract-control-status.enum';
 
-const delayBeforeRevealingAll = 1000;
+let delayBeforeRevealingAll = 1000;
 let timeBetweenRemoveOfEachItem = 10;
-const timeBetweenSeparationOfEach = 20;
-const timeBetweenFlipEachItem = 0;
+let timeBetweenSeparationOfEach = 20;
+let timeBetweenFlipEachItem = 0;
 let delayAfterRemovingItems = 1000;
-const delayBeforeSeparating = 2000;
-const delayAfterSeparating = 1000;
-const delayAfterFlipThemAll = 1000;
-const delayAfterSettingPosition = 1000;
+let delayBeforeSeparating = 2000;
+let delayAfterSeparating = 1000;
+let delayAfterFlipThemAll = 1000;
+let delayAfterSettingPosition = 1000;
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent implements OnInit, AfterViewInit {
+export class AppComponent implements OnInit {
   readonly LotteryStatus = LotteryStatus;
   @ViewChild('squidBoard') squidBoardElement: ElementRef;
   title = 'squid-lottery';
@@ -37,8 +37,8 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
+    this.squidService.refreshParticipants();
     this.lotteryStatus = LotteryStatus.START;
-
   }
 
   userByName(index, item) {
@@ -72,7 +72,7 @@ export class AppComponent implements OnInit, AfterViewInit {
       const cardHeight = this.squidBoardElement?.nativeElement?.querySelector('.flip-card').clientHeight;
       const leftStep = cardWidth + cardSpacing;
       const cards = this.squidBoardElement?.nativeElement?.querySelectorAll('.flip-card');
-      cards.forEach((el: HTMLElement, index) => {
+      cards.forEach((el: HTMLElement,) => {
         el.style.marginLeft = `${left}px`;
         el.style.marginTop = `${top}px`;
         left = left + leftStep;
@@ -87,7 +87,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   setCardsPosition(top, left): void {
     console.log('setCardsPosition');
     const cards = this.squidBoardElement?.nativeElement?.querySelectorAll('.flip-card');
-    cards.forEach((el: HTMLElement, index) => {
+    cards.forEach((el: HTMLElement, ) => {
       el.style.marginTop = '0';
       el.style.marginLeft = '0';
       el.style.top = `${top}px`;
@@ -164,12 +164,8 @@ export class AppComponent implements OnInit, AfterViewInit {
   getRandomNumber(min, max): number {
       min = Math.ceil(min);
       max = Math.floor(max);
-      return Math.floor(Math.random() * (max - min + 1) + min); // The maximum is inclusive and the minimum is inclusive
+      return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive
     }
-
-  ngAfterViewInit(): void {
-    // this.startLottery();
-  }
 
   startCountdown(): void {
     this.lotteryStatus = LotteryStatus.PRECOUNTDOWN;
@@ -194,11 +190,12 @@ export class AppComponent implements OnInit, AfterViewInit {
     * remove
      */
     this.lotteryStatus = LotteryStatus.PROCESSING;
-    this.squidService.refreshParticipants();
-    this.participants$ = this.squidService.participants$.pipe(tap(participants => {
-      this.participantsLength = participants.length;
-      console.log('Number of participants: ' + this.participantsLength);
-    }));
+    this.participants$ = this.squidService.participants$.pipe(
+      filter((p) => !!p?.length),
+      tap(participants => {
+        this.participantsLength = participants.length;
+        console.log('Number of participants: ' + this.participantsLength);
+      }));
     this.squidService.participants$.pipe(filter((participants) => !!participants?.length), take(1)).subscribe(participants => {
       this.participantsLength = participants.length;
       console.log('Number of participants: ' + this.participantsLength);
@@ -231,13 +228,12 @@ export class AppComponent implements OnInit, AfterViewInit {
         if (remainingParticipants.length < 50) {
           timeBetweenRemoveOfEachItem = 50;
           delayAfterRemovingItems = 2500;
-
         }
       }),
       delay(delayBeforeSeparating),
       switchMap(() => this.separateOneByOne()),
       switchMap(() => this.flipThemAll()),
-    ).subscribe((flipThemAll => {
+    ).subscribe((() => {
       this.removeItems().then((innerRemainingParticipants) => {
         if (innerRemainingParticipants.length <= 20) {
           this.flipThemAll().pipe(take(1)).subscribe(() => {

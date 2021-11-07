@@ -20,7 +20,7 @@
     <div class="text" *ngIf="lotteryStatus === LotteryStatus.START">Start</div>
 
     <div class="text" *ngIf="lotteryStatus === LotteryStatus.COUNTDOWN">
-      <ng-container [counter]="'4'" [interval]="'1000'" (value)="counterEvent($event)">
+      <ng-container [counter]="4" [interval]="1000" (value)="counterEvent($event)">
         <h3>{{ counter }}</h3>
       </ng-container>
     </div>

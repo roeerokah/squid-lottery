@@ -25,7 +25,10 @@ export class SquidService {
   }
 
   refreshParticipants(): void {
-    this._participants$.next(this.participantsList);
+    this.httpClient.get<Participant[]>(`${this.URL}participants?offline=true`).subscribe(participants => {
+      console.log(participants);
+      this._participants$.next(participants);
+    })
   }
 
   getParticipants() : Participant[] {
