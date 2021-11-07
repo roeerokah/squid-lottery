@@ -178,7 +178,7 @@ export class AppComponent implements OnInit {
 
   startCountdown(): void {
     this.lotteryStatus = LotteryStatus.PRECOUNTDOWN;
-    //this.playAudio();
+    this.playAudio();
     setTimeout(() => {
       this.lotteryStatus = LotteryStatus.COUNTDOWN;
     }, 300);
