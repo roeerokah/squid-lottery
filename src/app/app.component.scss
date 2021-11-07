@@ -129,11 +129,13 @@ $padding: 5px;
       color: white;
       transform: rotateY(180deg);
 
-      h1{
-        -webkit-transition: font-size 8s;
-        -moz-transition: font-size 8s;
-        -o-transition: font-size 8s;
-        transition:  font-size 8s;
+      &.winner {
+        h1{
+          -webkit-transition: font-size 8s;
+          -moz-transition: font-size 8s;
+          -o-transition: font-size 8s;
+          transition:  font-size 8s;
+        }
       }
     }
   }
