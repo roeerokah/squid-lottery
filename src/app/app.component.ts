@@ -177,7 +177,9 @@ export class AppComponent implements OnInit {
 
   counterEvent(value): void {
     if (value === 0) {
-      this.startLottery();
+      setTimeout(() => {
+        this.startLottery();
+      }, 1400);
     }
     this.counter = value;
   }
@@ -338,7 +340,7 @@ export class AppComponent implements OnInit {
 
   private playAudio(): void{
     const audio = new Audio();
-    audio.src = '../../../assets/audio/next-audio.mp3';
+    audio.src = '../../../assets/audio/next-audio.wav';
     audio.load();
     audio.play();
   }
