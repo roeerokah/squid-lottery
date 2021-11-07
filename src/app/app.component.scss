@@ -129,8 +129,11 @@ $padding: 5px;
       background-color: #2980b9;
       color: white;
       transform: rotateY(180deg);
+      pointer-events: none;
 
       &.winner {
+        pointer-events: visible;
+        cursor: pointer;
         h1{
           -webkit-transition: font-size 8s;
           -moz-transition: font-size 8s;

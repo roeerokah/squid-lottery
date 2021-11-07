@@ -17,6 +17,7 @@ const delayAfterSeparating = 1000;
 const delayAfterFlipThemAll = 1000;
 const delayAfterSettingPosition = 1000;
 const padding = 5;
+let nextWinner = 2;
 
 @Component({
   selector: 'app-root',
@@ -41,7 +42,7 @@ export class AppComponent implements OnInit {
   ngOnInit(): void {
     this.squidService.refreshParticipants();
     this.lotteryStatus = LotteryStatus.START;
-    this.counterEvent(0);
+    //this.counterEvent(0);
   }
 
   userByName(index, item) {
@@ -306,26 +307,18 @@ export class AppComponent implements OnInit {
     this.showConfetti();
     console.info('winner', winner);
     this.winners[1] = winner;
-    const selector = `#card_0 .flip-card-back h1`;
-    const cardElement: HTMLElement = this.squidBoardElement?.nativeElement?.querySelector('#card_0')
-    const winnerElement: HTMLElement = this.squidBoardElement?.nativeElement?.querySelector(selector);
-    let nextWinner = 1;
-    let pressedOnce = false;
-    console.log(cardElement);
-    setTimeout(() => {
-      cardElement.addEventListener('click', () => {
-        console.log('pressed');
-        pressedOnce = !pressedOnce;
-        if (!pressedOnce && this.winners[nextWinner]) {
-          winnerElement.textContent =  this.winners[nextWinner].name;
-          this.cd.detectChanges();
-          nextWinner++;
-        }
-      } )
-    }, 100)
     this.squidService.declareWinners(this.winners).subscribe();
     console.log(this.winners);
+  }
 
+  private getNextWinner(): void {
+    const selector = `#card_0 .flip-card-back h1`;
+    const winnerElement: HTMLElement = this.squidBoardElement?.nativeElement?.querySelector(selector);
+    if (this.winners[nextWinner]) {
+      winnerElement.textContent =  this.winners[nextWinner].name;
+      this.cd.detectChanges();
+      nextWinner++;
+    }
   }
 
   private flipThemAll(): Observable<void> {
