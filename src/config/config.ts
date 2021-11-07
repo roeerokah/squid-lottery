@@ -1,4 +1,4 @@
 export const config = {
-  fromSheet: true,
-  writeToSheet: true,
+  fromSheet: false,
+  writeToSheet: false,
 }
