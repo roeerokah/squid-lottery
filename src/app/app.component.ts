@@ -177,7 +177,7 @@ export class AppComponent implements OnInit {
 
   startCountdown(): void {
     this.lotteryStatus = LotteryStatus.PRECOUNTDOWN;
-    this.playAudio();
+    //this.playAudio();
     setTimeout(() => {
       this.lotteryStatus = LotteryStatus.COUNTDOWN;
     }, 300);
@@ -284,8 +284,9 @@ export class AppComponent implements OnInit {
     }));
   }
 
-  private setRemainingAndCalcSize(remainingParticipants: Participant[]) {
+  private setRemainingAndCalcSize(remainingParticipants: Participant[]): void {
     console.log('setParticipant');
+    this.participantsLength = remainingParticipants.length;
     this.squidService.setParticipants(remainingParticipants);
     this.squidSize = this.squidService.calcSquidSize(window.innerWidth, window.innerHeight, this.participantsLength, padding);
     setTimeout(() => {

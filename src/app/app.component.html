@@ -6,7 +6,7 @@
       <div class="flip-card-inner">
         <div class="flip-card-front">
         </div>
-        <div class="flip-card-back">
+        <div class="flip-card-back" [ngClass]="{'winner' : participantsLength === 1}">
           <h1 [style.font-size.px]="squidSize.height / 4">{{squid.name}}</h1>
         </div>
       </div>

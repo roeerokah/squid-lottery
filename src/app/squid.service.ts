@@ -38,9 +38,10 @@ export class SquidService {
 
   calcSquidSize(innerWidth: number, innerHeight: number, squidLength: number, padding: number): SquidSize {
     const squidPerRow = Math.ceil(Math.sqrt(squidLength));
+    const squidPerColumns = Math.ceil(squidLength / squidPerRow);
 
     const squidWidth = innerWidth / squidPerRow;
-    const squidHeight = innerHeight / squidPerRow ;
+    const squidHeight = innerHeight / squidPerColumns ;
 
     console.log('squidWidth', squidWidth);
     console.log('squidHeight', squidHeight);
