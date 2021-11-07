@@ -311,6 +311,7 @@ export class AppComponent implements OnInit {
     const winnerElement: HTMLElement = this.squidBoardElement?.nativeElement?.querySelector(selector);
     let nextWinner = 1;
     let pressedOnce = false;
+    console.log(cardElement);
     setTimeout(() => {
       cardElement.addEventListener('click', () => {
         console.log('pressed');
@@ -321,7 +322,7 @@ export class AppComponent implements OnInit {
           nextWinner++;
         }
       } )
-    }, 0)
+    }, 100)
     this.squidService.declareWinners(this.winners).subscribe();
     console.log(this.winners);
 
