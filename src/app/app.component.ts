@@ -42,7 +42,8 @@ export class AppComponent implements OnInit {
   ngOnInit(): void {
     this.squidService.refreshParticipants();
     this.lotteryStatus = LotteryStatus.START;
-    //this.counterEvent(0);
+    // For debugging enable this line
+    // this.counterEvent(0);
   }
 
   userByName(index, item) {
